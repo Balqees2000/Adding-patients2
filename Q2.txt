@@ -1,0 +1,26 @@
+#import the library
+import random
+
+#count # of user tries
+usertries=0
+
+#Generate random number between 10 & 100
+randomnum=random.randint(10, 100)
+print(randomnum)
+
+#prompt the user to guess the number
+userguess=int(input("Guess the random number generated"))
+
+while userguess !=randomnum:
+    usertries+=1
+    
+    if userguess < randomnum :
+        userguess=int(input("too low, guess again!"))
+        
+    elif userguess > randomnum :
+          userguess=int(input("too high, guess again!"))  
+             
+    else:
+        print("incorrect input")
+        
+print(f"you won! and the number of your tries is: {usertries}") 
