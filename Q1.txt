@@ -1,0 +1,17 @@
+#re is a library that's used to manipulate strings 
+#import re 
+
+#prompt the user to enter a sentence or paragraph and read the input
+
+userInput=input("please enter a sentence or paragraph")
+#print(userInput)
+
+#split the inputted string into words using split function and the delimeter is white space
+splittedInput=userInput.split(" ")
+print(splittedInput)
+
+#remove any special characters from the string using filter function that 
+#accpects 2 parameters , A function to evaluate against,an iteratable string
+
+specialremovedtext = ''.join(filter(str.isalnum,userInput))
+print(specialremovedtext)
