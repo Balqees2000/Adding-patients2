@@ -1,0 +1,218 @@
+from pymongo import MongoClient, database
+import pandas as pd
+import xlrd
+import re
+
+
+
+# creating mongodb connection
+# client = MongoClient('localhost', 27017)
+
+# db = client['firstdb']
+# collection = db['InsurancesColl']
+
+# create a class to connect to db
+
+class MongodbConnect:
+    def __init__(self, patientstring, database='firstdb'):
+        self.patientstring = patientstring
+        self.database_name = database
+        self.client = None
+        self.db = None
+
+    def connect(self):
+        try:
+            self.client = MongoClient(self.patientstring)
+            self.db = self.client[self.database_name]
+            print("Connected to MongoDB")
+        except Exception as e:
+            print("Connection failed:", str(e))
+
+    def close(self):
+        if self.client:
+            self.client.close()
+            print("Connection closed")
+
+    def get_collection(self, collection_name):
+        if self.db is not None:
+            return self.db[collection_name]
+        else:
+            return None
+
+    def insert_document(self, collection_name, document):
+        collection = self.db[collection_name]
+        result = collection.insert_one(document)
+        return result.inserted_id
+
+    def update_document(self, collection_name, query, update_data):
+        collection = self.db[collection_name]
+        result = collection.update_one(query, {'$set': update_data})
+        return result.modified_count
+
+    def insert_many(self, collection_name, documents):
+        collection = self.db[collection_name]
+        result = collection.insert_many(documents)
+        return result.inserted_ids
+
+    def find_patient_by_name(self, collection_name, search_criteria):
+        collection = self.db[collection_name]
+        result = collection.find(search_criteria)
+
+        patient_names = [doc['Patient_name'] for doc in result]
+        return patient_names
+
+
+    def find_patient_by_id(self, collection_name, search_criteria):
+        collection = self.db[collection_name]
+        result_cursor = collection.find(search_criteria)
+
+        patient_ids = [doc['Insurance_Id'] for doc in result_cursor]
+        return patient_ids
+
+
+    def find_all_patients(self, collection_name):
+        collection = self.db[collection_name]
+        result_cursor = collection.find({})
+
+        all_patients = list(result_cursor)
+        return all_patients
+
+
+    def export_all_patients_to_excel(self, collection_name, excel_filename):
+        collection = self.db[collection_name]
+        result_cursor = collection.find({})
+
+        all_patients = list(result_cursor)
+        df = pd.DataFrame(all_patients)
+
+        # Save the DataFrame to an Excel file
+        df.to_excel(excel_filename, index=False)
+        print(f"Exported all patients to {excel_filename}")
+
+
+
+if __name__ == "__main__":
+    # connector = MongodbConnect(host='localhost', port=27017, database='firstdb')
+    # connector.connect()
+
+    patientstring = 'mongodb+srv://balqeesalkhatib12:Awr4DUEQOTAD7Otr@cluster0.pheqeag.mongodb.net/'
+    connector = MongodbConnect(patientstring=patientstring, database='firstdb')
+    connector.connect()
+
+    #to export the excel sheet data into mongodb
+
+    location = r'C:\Users\HP\Desktop\Medvertex training\patientsInfo.xlsx'
+    sheet_name = 'Sheet1'
+    # Read the Excel file into a DataFrame
+    # df = pd.read_excel(location, sheet_name=sheet_name)
+    # Convert the DataFrame to a list of dictionaries
+    # records = df.to_dict(orient='records')
+    # Specify the collection you want to insert the records into
+    collection_name = 'PatientList'
+    # Insert the records into the collection
+    # inserted_ids = connector.insert_many(collection_name, records)
+    # print("Data inserted successfully:", inserted_ids)
+
+
+
+
+
+    # Find patient by name
+
+    # Specify the search criteria as a dictionary
+    search_criteria = {'Patient_name': 'Talia'}
+
+    # Call the function to find patients based on the criteria
+    found_patient_names = connector.find_patient_by_name(collection_name, search_criteria)
+    print("Found patients:", found_patient_names)
+
+
+
+    #find patient by insurance id
+    search_criteria = {'Insurance_Id': 2386948362}
+    found_patient_ids = connector.find_patient_by_id(collection_name,search_criteria)
+    print("Found patients:", found_patient_ids)
+
+
+
+    # find all patients in database
+    #the export_all_patients_to_excel method retrieves all patients from the MongoDB collection and creates a
+    # DataFrame using pandas. It then exports the DataFrame to an Excel file using the to_excel method.
+    # The index=False parameter
+    # ensures that the DataFrame index is not included in the exported Excel file.
+    all_patients = connector.find_all_patients(collection_name)
+
+    for patient in all_patients:
+        print("Patient:", patient)
+
+    excel_filename = 'all_patients.xlsx'
+
+    excel_filename = 'patients.xlsx'
+    # Call the function to export all patients to an Excel file
+    connector.export_all_patients_to_excel(collection_name, excel_filename)
+
+    connector.close()
+
+    #this section is for reading and printing the excel sheet data here
+
+    # location = r'C:\Users\HP\Desktop\Medvertex training\Book1.xlsx'
+    # sheet_name = 'Sheet1'
+    # sheet_names = pd.ExcelFile(location).sheet_names
+    # Read the Excel file into a DataFrame
+    # df = pd.read_excel(location, sheet_name)
+    # print(df)
+
+
+
+    # my_collection = connector.get_collection('InsurancesColl')
+
+    # inserting item
+   
+    # InsertedItem = my_collection.insert_one({
+    #     "Insurance name": "company2"
+    # })
+    # print(f"item inserted successfully",{InsertedItem})
+
+    #calling the methods i did above
+    # document_to_insert = {"name": "gig", "Insurance day": 'Wednsday'}
+    # inserted_id = connector.insert_document('InsurancesColl', document_to_insert)
+    # print(f"Inserted document with ID: {inserted_id}")
+
+
+
+    # Updating a document
+
+    # update_query = {"name": "gig"}
+    # update_data = {"Insurance day": 'Tuesday'}
+    # modified_count = connector.update_document('InsurancesColl', update_query, update_data)
+    # print(f"Modified {modified_count} document(s)")
+
+
+
+    # Access or create the database and create the new collection
+
+    # database = connector.client[connector.database_name]
+    # collection_name = 'PatientList'
+    #use function create_collection
+    # database.create_collection(collection_name)
+    # print(f"Collection '{collection_name}' created in database '{connector.database_name}'.")
+
+
+    #to delete a collection
+
+    # database_name = "firstdb"
+    # collection_name = "NewCollection"
+    # Access the database
+    # database = connector.client[database_name]
+    # Access the collection to delete
+    # collection = database[collection_name]
+    # Drop the collection
+    # collection.drop()
+    # print(f"Collection '{collection_name}' deleted from database '{connector.database_name}'.")
+
+    # connector.close()
+
+
+    # Insert data into MongoDB collection
+    # my_collection = database['firstdb']
+    # my_collection.insert_many(datalist)
